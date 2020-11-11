@@ -3,6 +3,6 @@ defmodule CoselixTest do
   doctest Coselix
 
   test "greets the world" do
-    assert Coselix.hello() == :world
+    IO.inspect Coselix.Keys.OKP.generate(:enc)
   end
 end
