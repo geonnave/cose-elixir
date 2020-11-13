@@ -37,12 +37,11 @@ defmodule COSE.Messages.Sign1 do
     end
   end
 
-  def sig_structure(msg, _external_aad \\ <<>>) do
+  def sig_structure(msg, external_aad \\ <<>>) do
     [
       "Signature1",
       (msg.phdr == %{} && <<>>) || COSE.Headers.tag_phdr(msg.phdr),
-      # _external_aad
-      COSE.tag_as_byte(<<>>),
+      COSE.tag_as_byte(external_aad),
       msg.payload
     ]
   end
@@ -60,5 +59,73 @@ defmodule COSE.Messages.Sign1 do
     to_be_verified = CBOR.encode(sig_structure(msg, external_aad))
 
     COSE.Keys.OKP.verify(to_be_verified, msg.signature, ver_key)
+  end
+end
+
+defmodule COSE.Messages.PartyInfo do
+  defstruct [:identity, :nonce, :other]
+
+  def encode(pi), do: [pi.identity, pi.nonce, pi.other]
+end
+
+defmodule COSE.Messages.SuppPubInfo do
+  defstruct [:key_data_length, :protected, :other]
+
+  def encode(spi) do
+    list = [spi.key_data_length, spi.protected]
+    if spi.other do
+      list ++ [spi.other]
+    else
+      list
+    end
+  end
+end
+
+defmodule COSE.Messages.ContextKDF do
+  defstruct [:algorithm_id, :party_u_info, :party_v_info, :supp_pub_info, :supp_priv_info]
+
+  def build(alg, u, v, spu, spr \\ nil) do
+    %__MODULE__{
+      algorithm_id: alg,
+      party_u_info: u,
+      party_v_info: v,
+      supp_pub_info: spu,
+      supp_priv_info: spr
+    }
+  end
+
+  def encode(context) do
+    c = [
+      COSE.algorithm(context.algorithm_id),
+      COSE.Messages.PartyInfo.encode(context.party_u_info),
+      COSE.Messages.PartyInfo.encode(context.party_v_info),
+      COSE.Messages.SuppPubInfo.encode(context.supp_pub_info),
+    ]
+    if context.supp_priv_info do
+      c ++ [context.supp_priv_info]
+    else
+      c
+    end
+  end
+end
+
+defmodule COSE.Messages.Recipient do
+  defstruct [:phdr, :uhdr]
+
+  # def derive_kek(recipient, sender_key, receiver_key, context) do
+  # end
+end
+
+defmodule COSE.Messages.Encrypt do
+  defstruct [:phdr, :uhdr, :payload, :recipients]
+
+  @spec build(binary, map, map) :: map
+  def build(payload, recipient \\ %{}, phdr \\ %{}, uhdr \\ %{}) do
+    %__MODULE__{
+      phdr: phdr,
+      uhdr: uhdr,
+      payload: COSE.tag_as_byte(payload),
+      recipients: [recipient]
+    }
   end
 end

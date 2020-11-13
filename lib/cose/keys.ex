@@ -5,8 +5,8 @@ defmodule COSE.Keys.OKP do
     {x, d} = :crypto.generate_key(:ecdh, :x25519)
 
     %__MODULE__{
-      kty: COSE.key_type(:okp),
-      crv: COSE.curve(:x25519),
+      kty: :okp,
+      crv: :x25519,
       x: x,
       d: d
     }
@@ -16,8 +16,8 @@ defmodule COSE.Keys.OKP do
     {x, d} = :crypto.generate_key(:eddsa, :ed25519)
 
     %__MODULE__{
-      kty: COSE.key_type(:okp),
-      crv: COSE.curve(:ed25519),
+      kty: :okp,
+      crv: :ed25519,
       x: x,
       d: d
     }
