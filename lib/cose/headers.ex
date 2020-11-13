@@ -5,6 +5,7 @@ defmodule COSE.Headers do
       cond do
         k == :alg || k == 1 ->
           {COSE.header(k), COSE.algorithm(v)}
+
         true ->
           {COSE.header(k), v}
       end

@@ -15,12 +15,21 @@ defmodule COSE.Messages.Sign1 do
       msg.payload,
       msg.signature
     ]
+
     CBOR.encode(%CBOR.Tag{tag: 18, value: value})
   end
 
   def decode(encoded_msg, key) do
-    {:ok, %CBOR.Tag{tag: 18, value: [phdr, uhdr, payload, signature]}, _} = CBOR.decode(encoded_msg)
-    msg = %__MODULE__{phdr: COSE.Headers.decode_phdr(phdr), uhdr: uhdr, payload: payload, signature: signature}
+    {:ok, %CBOR.Tag{tag: 18, value: [phdr, uhdr, payload, signature]}, _} =
+      CBOR.decode(encoded_msg)
+
+    msg = %__MODULE__{
+      phdr: COSE.Headers.decode_phdr(phdr),
+      uhdr: uhdr,
+      payload: payload,
+      signature: signature
+    }
+
     if verify(msg, key) do
       msg
     else
@@ -31,8 +40,9 @@ defmodule COSE.Messages.Sign1 do
   def sig_structure(msg, _external_aad \\ <<>>) do
     [
       "Signature1",
-      msg.phdr == %{} && <<>> || COSE.Headers.tag_phdr(msg.phdr),
-      COSE.tag_as_byte(<<>>), # _external_aad
+      (msg.phdr == %{} && <<>>) || COSE.Headers.tag_phdr(msg.phdr),
+      # _external_aad
+      COSE.tag_as_byte(<<>>),
       msg.payload
     ]
   end
@@ -41,8 +51,8 @@ defmodule COSE.Messages.Sign1 do
     to_be_signed = CBOR.encode(sig_structure(msg, external_aad))
 
     %__MODULE__{
-      msg |
-      signature: COSE.Keys.OKP.sign(to_be_signed, key)
+      msg
+      | signature: COSE.Keys.OKP.sign(to_be_signed, key)
     }
   end
 
