@@ -1,21 +1,15 @@
 # COSE
 
-**TODO: Add description**
+Concise Binary Object Representation (CBOR) in Elixir.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `cose` to your list of dependencies in `mix.exs`:
+Add `cose` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:cose, "~> 0.1.0"}
+    {:cose, git: "https://github.com/geonnave/cose-elixir.git"}
   ]
 end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/cose](https://hexdocs.pm/cose).
-
