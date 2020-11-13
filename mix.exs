@@ -1,9 +1,9 @@
-defmodule Coselix.MixProject do
+defmodule COSE.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :coselix,
+      app: :cose,
       version: "0.1.0",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
