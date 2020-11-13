@@ -35,7 +35,6 @@ defmodule Coselix do
       {x, d} = :crypto.generate_key(:ecdh, :x25519)
       %__MODULE__{
         kty: Coselix.key_type(:okp),
-        alg: Coselix.alg(:ecdh_ss_hkdf_256),
         crv: Coselix.curve(:x25519),
         x: x,
         d: d,
@@ -46,11 +45,18 @@ defmodule Coselix do
       {x, d} = :crypto.generate_key(:eddsa, :ed25519)
       %__MODULE__{
         kty: Coselix.key_type(:okp),
-        alg: Coselix.alg(:ecdh_ss_hkdf_256),
         crv: Coselix.curve(:ed25519),
         x: x,
         d: d,
       }
+    end
+
+    def sign(to_be_signed, key) do
+      :crypto.sign(:eddsa, :sha256, to_be_signed, [key.d, :ed25519])
+    end
+
+    def verify(to_be_verified, signature, ver_key) do
+      :crypto.verify(:eddsa, :sha256, to_be_verified, signature, [ver_key.x, :ed25519])
     end
   end
 
@@ -59,9 +65,10 @@ defmodule Coselix do
   end
 
   defmodule Headers do
-    def encode(header) do
-      header
-    end
+    def encode_phdr(%{}), do: <<>>
+    def encode_phdr(phdr), do: CBOR.encode(phdr)
+    def decode_phdr(<<>>), do: %{}
+    def decode_phdr(phdr), do: CBOR.decode(phdr)
   end
 
   defmodule Messages.Sign1 do
@@ -75,8 +82,8 @@ defmodule Coselix do
       msg = sign(msg, key)
 
       [
-        Headers.encode(msg.phdr),
-        Headers.encode(msg.uhdr),
+        Headers.encode_phdr(msg.phdr),
+        msg.uhdr,
         msg.payload,
         msg.signature
       ]
@@ -85,7 +92,7 @@ defmodule Coselix do
 
     def decode(encoded_msg, key) do
       {:ok, [phdr, uhdr, payload, signature], _} = CBOR.decode(encoded_msg)
-      msg = %__MODULE__{phdr: phdr, uhdr: uhdr, payload: payload, signature: signature}
+      msg = %__MODULE__{phdr: Headers.decode_phdr(phdr), uhdr: uhdr, payload: payload, signature: signature}
       if verify(msg, key) do
         msg
       else
@@ -93,15 +100,31 @@ defmodule Coselix do
       end
     end
 
-    def sign(msg, key) do
+    def sign(msg, key, external_aad \\ <<>>) do
+      sig_struct = [
+        "Signature1",
+        Headers.encode_phdr(msg.phdr),
+        external_aad,
+        msg.payload
+      ]
+      to_be_signed = CBOR.encode(sig_struct)
+
       %__MODULE__{
         msg |
-        signature: :crypto.sign(:eddsa, :sha256, msg.payload, [key.d, :ed25519])
+        signature: Coselix.Keys.OKP.sign(to_be_signed, key)
       }
     end
 
-    def verify(msg, ver_key) do
-      :crypto.verify(:eddsa, :sha256, msg.payload, msg.signature, [ver_key.x, :ed25519])
+    def verify(msg, ver_key, external_aad \\ <<>>) do
+      sig_struct = [
+        "Signature1",
+        Headers.encode_phdr(msg.phdr),
+        external_aad,
+        msg.payload
+      ]
+      to_be_verified = CBOR.encode(sig_struct)
+
+      Coselix.Keys.OKP.verify(to_be_verified, msg.signature, ver_key)
     end
   end
 end
