@@ -1,0 +1,38 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "mix test",
+            "type": "shell",
+            "command": "mix test",
+            "presentation": {
+                "focus": true,
+                "clear": true
+            }
+        },
+        {
+            // https://gist.github.com/joebew42/b7460b17385dc9ed8f753b1271d70819
+            "label": "Run Focused Test",
+            "type": "shell",
+            "command": "mix",
+            "args": [
+                "test",
+                "${relativeFile}:${lineNumber}"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "problemMatcher": [
+                "$mixCompileError",
+                "$mixCompileWarning",
+                "$mixTestFailure"
+            ],
+            "presentation": {
+                "focus": true,
+                "clear": true
+            }
+        }
+    ]
+}
