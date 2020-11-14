@@ -4,7 +4,15 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "mix test",
+            "label": "Format",
+            "type": "shell",
+            "command": "mix format",
+            "presentation": {
+                "reveal": "silent"
+            }
+        },
+        {
+            "label": "Run Tests",
             "type": "shell",
             "command": "mix test",
             "presentation": {

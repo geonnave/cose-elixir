@@ -19,7 +19,8 @@ defmodule COSE.MixProject do
 
   defp deps do
     [
-      {:cbor, "~> 1.0.0"}
+      {:cbor, "~> 1.0.0"},
+      {:hkdf_erlang, "~> 0.1.1"}
     ]
   end
 end

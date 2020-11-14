@@ -18,8 +18,9 @@ defmodule COSE do
   def curve(crv) when is_integer(crv), do: invert(@cose_curves)[crv]
 
   @cose_algs %{
-    ecdh_ss_hkdf_256: -27,
+    direct: -6,
     aes_ccm_16_64_128: 10,
+    ecdh_ss_hkdf_256: -27,
     eddsa: -8
   }
   def algorithm(alg) when is_atom(alg), do: @cose_algs[alg]

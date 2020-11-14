@@ -73,6 +73,7 @@ defmodule COSE.Messages.SuppPubInfo do
 
   def encode(spi) do
     list = [spi.key_data_length, spi.protected]
+
     if spi.other do
       list ++ [spi.other]
     else
@@ -99,25 +100,35 @@ defmodule COSE.Messages.ContextKDF do
       COSE.algorithm(context.algorithm_id),
       COSE.Messages.PartyInfo.encode(context.party_u_info),
       COSE.Messages.PartyInfo.encode(context.party_v_info),
-      COSE.Messages.SuppPubInfo.encode(context.supp_pub_info),
+      COSE.Messages.SuppPubInfo.encode(context.supp_pub_info)
     ]
+
     if context.supp_priv_info do
       c ++ [context.supp_priv_info]
     else
       c
     end
   end
+
+  def encode_cbor(context) do
+    context |> encode() |> CBOR.encode()
+  end
 end
 
 defmodule COSE.Messages.Recipient do
-  defstruct [:phdr, :uhdr]
+  defstruct [:phdr, :uhdr, :ciphertext]
 
-  # def derive_kek(recipient, sender_key, receiver_key, context) do
-  # end
+  def derive_kek(sender_key, receiver_key, context) do
+    secret = :crypto.compute_key(:eddh, receiver_key.x, sender_key.d, :x25519)
+
+    len = round(context.supp_pub_info.key_data_length / 8)
+    info = COSE.Messages.ContextKDF.encode_cbor(context)
+    :hkdf.derive(:sha256, secret, info, len)
+  end
 end
 
 defmodule COSE.Messages.Encrypt do
-  defstruct [:phdr, :uhdr, :payload, :recipients]
+  defstruct [:phdr, :uhdr, :ciphertext, :recipients, :payload, :aad]
 
   @spec build(binary, map, map) :: map
   def build(payload, recipient \\ %{}, phdr \\ %{}, uhdr \\ %{}) do
@@ -125,7 +136,24 @@ defmodule COSE.Messages.Encrypt do
       phdr: phdr,
       uhdr: uhdr,
       payload: COSE.tag_as_byte(payload),
+      aad: COSE.tag_as_byte(<<>>),
       recipients: [recipient]
     }
+  end
+
+  def enc_structure(msg, external_aad \\ <<>>) do
+    [
+      "Encrypt",
+      (msg.phdr == %{} && COSE.tag_as_byte(<<>>) || COSE.Headers.tag_phdr(msg.phdr)),
+      COSE.tag_as_byte(external_aad)
+    ]
+  end
+
+  def encrypt(msg, key, iv, external_aad \\ <<>>) do
+    aad = msg |> enc_structure(external_aad) |> CBOR.encode()
+    payload = CBOR.encode(msg.payload)
+
+    {enc_msg, tag} = :crypto.crypto_one_time_aead(:aes_128_ccm, key.k, iv, payload, aad, 8, true)
+    enc_msg <> tag
   end
 end

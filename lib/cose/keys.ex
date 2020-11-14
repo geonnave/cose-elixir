@@ -2,7 +2,7 @@ defmodule COSE.Keys.OKP do
   defstruct [:kty, :kid, :alg, :key_ops, :base_iv, :crv, :x, :d]
 
   def generate(:enc) do
-    {x, d} = :crypto.generate_key(:ecdh, :x25519)
+    {x, d} = :crypto.generate_key(:eddh, :x25519)
 
     %__MODULE__{
       kty: :okp,
@@ -33,6 +33,6 @@ defmodule COSE.Keys.OKP do
   end
 end
 
-defmodule Keys.Symmetric do
+defmodule COSE.Keys.Symmetric do
   defstruct [:kty, :kid, :alg, :key_ops, :base_iv, :k]
 end
