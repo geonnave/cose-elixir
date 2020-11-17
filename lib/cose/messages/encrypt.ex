@@ -12,6 +12,33 @@ defmodule COSE.Messages.Encrypt do
     }
   end
 
+  def to_array(msg) do
+    [
+      COSE.Headers.tag_phdr(msg.phdr),
+      msg.uhdr,
+      msg.ciphertext,
+      COSE.Messages.Recipient.encode_many(msg.recipients)
+    ]
+  end
+
+  def encode_cbor(msg, key, iv) do
+    array_msg = encrypt(msg, key, iv) |> to_array()
+
+    CBOR.encode(%CBOR.Tag{tag: 96, value: array_msg})
+  end
+
+  def decode_cbor(cbor_msg) do
+    {:ok, %CBOR.Tag{tag: 96, value: [phdr, uhdr, ciphertext, recipients]}, _} =
+      CBOR.decode(cbor_msg)
+
+    %__MODULE__{
+      phdr: COSE.Headers.decode_phdr(phdr),
+      uhdr: uhdr,
+      ciphertext: ciphertext,
+      recipients: COSE.Messages.Recipient.decode_many(recipients)
+    }
+  end
+
   def enc_structure(msg, external_aad \\ <<>>) do
     [
       "Encrypt",

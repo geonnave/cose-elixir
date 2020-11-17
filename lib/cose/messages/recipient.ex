@@ -69,4 +69,16 @@ defmodule COSE.Messages.Recipient do
       recipient.ciphertext
     ]
   end
+
+  def encode_many(recipients) do
+    Enum.map(recipients, &encode/1)
+  end
+
+  def decode([phdr, uhdr, ciphertext]) do
+    %__MODULE__{phdr: COSE.Headers.decode_phdr(phdr), uhdr: uhdr, ciphertext: ciphertext}
+  end
+
+  def decode_many(recipients) do
+    Enum.map(recipients, &decode/1)
+  end
 end
