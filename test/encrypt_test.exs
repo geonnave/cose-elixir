@@ -35,11 +35,17 @@ defmodule COSETest.Encrypt do
         protected: Headers.tag_phdr(%{alg: :ecdh_ss_hkdf_256})
       }
 
-      alg = COSE.algorithm(:aes_ccm_16_64_128)
       context = ContextKDF.build(:aes_ccm_16_64_128, %PartyInfo{nonce: <<1>>}, %PartyInfo{}, s)
+
+      alg = COSE.algorithm(:aes_ccm_16_64_128)
 
       assert [^alg, [nil, <<1>>, nil], [nil, nil, nil], [128, %CBOR.Tag{}]] =
                ContextKDF.encode(context)
+    end
+
+    test "recipient encoding" do
+      recipient = %Recipient{phdr: %{alg: :ecdh_ss_hkdf_256}}
+      assert [%CBOR.Tag{}, %{}, nil] = Recipient.encode(recipient)
     end
 
     test "encrypt message", %{
@@ -49,13 +55,16 @@ defmodule COSETest.Encrypt do
       # recipient: recipient,
       context: context
     } do
+      assert ["Encrypt", %CBOR.Tag{}, %CBOR.Tag{value: <<>>}] = Encrypt.enc_structure(msg)
+
       kek_bytes = Recipient.derive_kek(sender_key, receiver_key, context)
       assert byte_size(kek_bytes) == 16
 
       cek = %Keys.Symmetric{k: kek_bytes, alg: :aes_ccm_16_64_128}
-      # kek = %Keys.Symmetric{k: kek_bytes, alg: :direct}
 
-      Encrypt.encrypt(msg, cek, msg.uhdr.iv)
+      enc_msg = Encrypt.encrypt(msg, cek, msg.uhdr.iv)
+      {:ok, dec_msg} = Encrypt.decrypt(enc_msg, cek, msg.uhdr.iv)
+      assert msg.payload == dec_msg.payload
     end
 
     # test "encrypt", %{sender_key: sender_key, receiver_key: receiver_key, recipient: recipient, msg: msg} do

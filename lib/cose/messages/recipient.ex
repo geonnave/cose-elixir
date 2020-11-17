@@ -52,7 +52,7 @@ defmodule COSE.Messages.ContextKDF do
 end
 
 defmodule COSE.Messages.Recipient do
-  defstruct [:phdr, :uhdr, :ciphertext]
+  defstruct phdr: %{}, uhdr: %{}, ciphertext: nil
 
   def derive_kek(sender_key, receiver_key, context) do
     secret = :crypto.compute_key(:eddh, receiver_key.x, sender_key.d, :x25519)
@@ -60,5 +60,13 @@ defmodule COSE.Messages.Recipient do
     len = round(context.supp_pub_info.key_data_length / 8)
     info = COSE.Messages.ContextKDF.encode_cbor(context)
     :hkdf.derive(:sha256, secret, info, len)
+  end
+
+  def encode(recipient) do
+    [
+      COSE.Headers.tag_phdr(recipient.phdr),
+      recipient.uhdr,
+      recipient.ciphertext
+    ]
   end
 end
