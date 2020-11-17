@@ -66,7 +66,7 @@ defmodule COSE.Messages.Recipient do
     [
       COSE.Headers.tag_phdr(recipient.phdr),
       recipient.uhdr,
-      recipient.ciphertext
+      COSE.tag_as_byte(recipient.ciphertext)
     ]
   end
 

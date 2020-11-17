@@ -41,4 +41,7 @@ defmodule COSE do
   def tag_as_byte(data) when is_binary(data) do
     %CBOR.Tag{tag: :bytes, value: data}
   end
+  def tag_as_byte(nil) do
+    %CBOR.Tag{tag: :bytes, value: <<>>}
+  end
 end

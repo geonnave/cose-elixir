@@ -6,7 +6,7 @@ defmodule COSE.Messages.Encrypt do
     %__MODULE__{
       phdr: phdr,
       uhdr: uhdr,
-      payload: COSE.tag_as_byte(payload),
+      payload: payload,
       aad: COSE.tag_as_byte(<<>>),
       recipients: [recipient]
     }
@@ -15,7 +15,7 @@ defmodule COSE.Messages.Encrypt do
   def to_array(msg) do
     [
       COSE.Headers.tag_phdr(msg.phdr),
-      msg.uhdr,
+      COSE.Headers.translate(msg.uhdr),
       msg.ciphertext,
       COSE.Messages.Recipient.encode_many(msg.recipients)
     ]
@@ -33,7 +33,7 @@ defmodule COSE.Messages.Encrypt do
 
     %__MODULE__{
       phdr: COSE.Headers.decode_phdr(phdr),
-      uhdr: uhdr,
+      uhdr: COSE.Headers.translate(uhdr),
       ciphertext: ciphertext,
       recipients: COSE.Messages.Recipient.decode_many(recipients)
     }
@@ -49,10 +49,9 @@ defmodule COSE.Messages.Encrypt do
 
   def encrypt(msg, key, iv, external_aad \\ <<>>) do
     aad = msg |> enc_structure(external_aad) |> CBOR.encode()
-    payload = CBOR.encode(msg.payload)
 
     {encrypted, tag} =
-      :crypto.crypto_one_time_aead(:aes_128_ccm, key.k, iv, payload, aad, 8, true)
+      :crypto.crypto_one_time_aead(:aes_128_ccm, key.k, iv, msg.payload, aad, 8, true)
 
     Map.put(msg, :ciphertext, COSE.tag_as_byte(encrypted <> tag))
   end
@@ -63,8 +62,7 @@ defmodule COSE.Messages.Encrypt do
 
     :crypto.crypto_one_time_aead(:aes_128_ccm, key.k, iv, encrypted, aad, tag, false)
     |> case do
-      dec_payload when is_binary(dec_payload) ->
-        {:ok, payload, _} = CBOR.decode(dec_payload)
+      payload when is_binary(payload) ->
         {:ok, Map.put(msg, :payload, payload)}
 
       error ->
