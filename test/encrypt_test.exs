@@ -48,7 +48,8 @@ defmodule COSETest.Encrypt do
 
     test "recipient encoding" do
       recipient = %Recipient{phdr: %{alg: :ecdh_ss_hkdf_256}}
-      assert [%CBOR.Tag{}, %{}, nil] = Recipient.encode(recipient)
+      # assert [%CBOR.Tag{}, %{}, nil] = Recipient.encode(recipient)
+      assert [%CBOR.Tag{}, %{}, %CBOR.Tag{}] = Recipient.encode(recipient)
     end
 
     test "encrypt message", %{
@@ -74,9 +75,8 @@ defmodule COSETest.Encrypt do
 
       # cbor encoding
       encoded_msg = Encrypt.encode_cbor(msg, cek, msg.uhdr.iv.value)
-      encoded_msg |> Base.encode16() |> IO.inspect()
 
-      decoded_msg = Encrypt.decode_cbor(encoded_msg) |> IO.inspect()
+      decoded_msg = Encrypt.decode_cbor(encoded_msg)
       [recp] = decoded_msg.recipients
       s = %SuppPubInfo{key_data_length: 128, protected: Headers.tag_phdr(recp.phdr)}
       ctx = ContextKDF.build(:aes_ccm_16_64_128, %PartyInfo{}, %PartyInfo{}, s)
