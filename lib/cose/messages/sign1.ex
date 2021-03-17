@@ -19,16 +19,20 @@ defmodule COSE.Messages.Sign1 do
     CBOR.encode(%CBOR.Tag{tag: 18, value: value})
   end
 
-  def decode(encoded_msg, key) do
+  def decode_only(encoded_msg) do
     {:ok, %CBOR.Tag{tag: 18, value: [phdr, uhdr, payload, signature]}, _} =
       CBOR.decode(encoded_msg)
 
-    msg = %__MODULE__{
+    %__MODULE__{
       phdr: COSE.Headers.decode_phdr(phdr),
       uhdr: uhdr,
       payload: payload,
       signature: signature
     }
+  end
+
+  def decode(encoded_msg, key) do
+    msg = decode_only(encoded_msg)
 
     if verify(msg, key) do
       msg

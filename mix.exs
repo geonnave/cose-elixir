@@ -19,6 +19,7 @@ defmodule COSE.MixProject do
 
   defp deps do
     [
+      {:b58, git: "https://github.com/dwyl/base58.git"},
       {:cbor, "~> 1.0.0"},
       {:hkdf_erlang, "~> 0.1.1"}
     ]
