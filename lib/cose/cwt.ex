@@ -34,13 +34,13 @@ defmodule COSE.CWT do
     |> Enum.into(%{})
   end
 
-  def encode(claims, key, custom_claims \\ %{}) do
+  def sign_encode(claims, key, custom_claims \\ %{}) do
     claims
     |> setup_dates()
     |> encode_claim_names(custom_claims)
     |> CBOR.encode()
     |> Sign1.build(%{alg: :eddsa})
-    |> Sign1.encode(key)
+    |> Sign1.sign_encode(key)
   end
 
   def decode_claim_names(claims, custom_claims \\ %{}) do
@@ -64,8 +64,9 @@ defmodule COSE.CWT do
     Map.new(map, fn {key, val} -> {val, key} end)
   end
 
-  def decode(token, key, custom_claims \\ %{}) do
-    if verified_msg = Sign1.decode(token, key) do
+  def verify_decode(token, key, custom_claims \\ %{}) do
+    msg = Sign1.decode(token)
+    if verified_msg = Sign1.verify(msg, key) do
       {:ok, cbor_claims, ""} = CBOR.decode(verified_msg.payload.value)
 
       cbor_claims
@@ -74,7 +75,7 @@ defmodule COSE.CWT do
   end
 
   def peek_claims(token, custom_claims \\ %{}) do
-    msg = Sign1.decode_only(token)
+    msg = Sign1.decode(token)
     {:ok, cbor_claims, ""} = CBOR.decode(msg.payload.value)
 
     cbor_claims

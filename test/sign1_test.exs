@@ -28,9 +28,10 @@ defmodule COSETest.Sign1 do
     end
 
     test "encode", %{key: key, msg: msg} do
-      encoded_msg = Sign1.encode(msg, key)
-      decoded_msg = Sign1.decode(encoded_msg, key)
-      assert decoded_msg == Sign1.sign(msg, key)
+      encoded_msg = Sign1.sign_encode(msg, key)
+      decoded_msg = Messages.Sign1.decode(encoded_msg)
+      verified_msg = Messages.Sign1.verify(decoded_msg, key)
+      assert verified_msg == Sign1.sign(msg, key)
     end
   end
 end

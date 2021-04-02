@@ -6,7 +6,7 @@ defmodule COSE.Messages.Sign1 do
     %__MODULE__{phdr: phdr, uhdr: uhdr, payload: COSE.tag_as_byte(payload)}
   end
 
-  def encode(msg, key) do
+  def sign_encode(msg, key) do
     msg = sign(msg, key)
 
     value = [
@@ -19,7 +19,16 @@ defmodule COSE.Messages.Sign1 do
     CBOR.encode(%CBOR.Tag{tag: 18, value: value})
   end
 
-  def decode_only(encoded_msg) do
+  def sign(msg, key, external_aad \\ <<>>) do
+    to_be_signed = CBOR.encode(sig_structure(msg, external_aad))
+
+    %__MODULE__{
+      msg
+      | signature: COSE.Keys.OKP.sign(to_be_signed, key)
+    }
+  end
+
+  def decode(encoded_msg) do
     {:ok, %CBOR.Tag{tag: 18, value: [phdr, uhdr, payload, signature]}, _} =
       CBOR.decode(encoded_msg)
 
@@ -31,10 +40,10 @@ defmodule COSE.Messages.Sign1 do
     }
   end
 
-  def decode(encoded_msg, key) do
-    msg = decode_only(encoded_msg)
+  def verify(msg, ver_key, external_aad \\ <<>>) do
+    to_be_verified = CBOR.encode(sig_structure(msg, external_aad))
 
-    if verify(msg, key) do
+    if COSE.Keys.OKP.verify(to_be_verified, msg.signature, ver_key) do
       msg
     else
       false
@@ -48,20 +57,5 @@ defmodule COSE.Messages.Sign1 do
       COSE.tag_as_byte(external_aad),
       msg.payload
     ]
-  end
-
-  def sign(msg, key, external_aad \\ <<>>) do
-    to_be_signed = CBOR.encode(sig_structure(msg, external_aad))
-
-    %__MODULE__{
-      msg
-      | signature: COSE.Keys.OKP.sign(to_be_signed, key)
-    }
-  end
-
-  def verify(msg, ver_key, external_aad \\ <<>>) do
-    to_be_verified = CBOR.encode(sig_structure(msg, external_aad))
-
-    COSE.Keys.OKP.verify(to_be_verified, msg.signature, ver_key)
   end
 end

@@ -73,18 +73,18 @@ defmodule COSETest.Encrypt do
       {:ok, dec_msg} = Encrypt.decrypt(enc_msg, cek, msg.uhdr.iv.value)
       assert msg.payload == dec_msg.payload
 
-      # cbor encoding
-      encoded_msg = Encrypt.encode_cbor(msg, cek, msg.uhdr.iv.value)
-
-      decoded_msg = Encrypt.decode_cbor(encoded_msg)
-      [recp] = decoded_msg.recipients
+      # encryption + cose encoding
+      encoded_msg = Encrypt.encrypt_encode(msg, cek, msg.uhdr.iv.value)
+      decoded_msg = Encrypt.decode(encoded_msg)
+      {:ok, decrypted_msg} = Encrypt.decrypt(decoded_msg, cek, decoded_msg.uhdr.iv.value)
+      [recp] = decrypted_msg.recipients
       s = %SuppPubInfo{key_data_length: 128, protected: Headers.tag_phdr(recp.phdr)}
       ctx = ContextKDF.build(:aes_ccm_16_64_128, %PartyInfo{}, %PartyInfo{}, s)
 
       kek_bytes = Recipient.derive_kek(receiver_key, sender_key, ctx)
       cek = %Keys.Symmetric{k: kek_bytes, alg: :aes_ccm_16_64_128}
 
-      {:ok, retrieved_msg} = Encrypt.decrypt(decoded_msg, cek, decoded_msg.uhdr.iv.value)
+      {:ok, retrieved_msg} = Encrypt.decrypt(decrypted_msg, cek, decrypted_msg.uhdr.iv.value)
       assert retrieved_msg.payload == msg.payload
     end
   end
