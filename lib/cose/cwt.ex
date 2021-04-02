@@ -65,8 +65,7 @@ defmodule COSE.CWT do
   end
 
   def verify_decode(token, key, custom_claims \\ %{}) do
-    msg = Sign1.decode(token)
-    if verified_msg = Sign1.verify(msg, key) do
+    if verified_msg = Sign1.verify_decode(token, key) do
       {:ok, cbor_claims, ""} = CBOR.decode(verified_msg.payload.value)
 
       cbor_claims

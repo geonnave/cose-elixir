@@ -28,6 +28,16 @@ defmodule COSE.Messages.Sign1 do
     }
   end
 
+  def verify_decode(encoded_msg, key) do
+    msg = decode(encoded_msg)
+
+    if verify(msg, key) do
+      msg
+    else
+      false
+    end
+  end
+
   def decode(encoded_msg) do
     {:ok, %CBOR.Tag{tag: 18, value: [phdr, uhdr, payload, signature]}, _} =
       CBOR.decode(encoded_msg)
