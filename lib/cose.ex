@@ -29,7 +29,8 @@ defmodule COSE do
   @cose_headers %{
     alg: 1,
     kid: 4,
-    iv: 5
+    iv: 5,
+    party_v_identity: -24
   }
   def header(hdr) when is_atom(hdr), do: @cose_headers[hdr]
   def header(hdr) when is_integer(hdr), do: invert_map(@cose_headers)[hdr]
@@ -41,6 +42,7 @@ defmodule COSE do
   def tag_as_byte(data) when is_binary(data) do
     %CBOR.Tag{tag: :bytes, value: data}
   end
+
   def tag_as_byte(nil) do
     %CBOR.Tag{tag: :bytes, value: <<>>}
   end

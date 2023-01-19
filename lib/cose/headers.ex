@@ -10,7 +10,7 @@ defmodule COSE.Headers do
           {COSE.header(k), v}
       end
     end)
-    |> Enum.into(%{})
+    |> Enum.into(%{}) # FIXME: this may alter the order of the elements. TO-DO: think of a way to solve it.
   end
 
   def tag_phdr(phdr_map) do
